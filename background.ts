@@ -63,7 +63,7 @@ const performBackup = async () => {
 // 重要：这个 URL 应该指向一个你控制的网页，用于告知用户数据可能丢失，
 // 或提供恢复方式（如果实现了云同步等）。
 // 它不能直接触发本地文件保存。
-const UNINSTALL_URL = "https://example.com/tab-manager-uninstalled" // !! 请替换为你自己的 URL !!
+const UNINSTALL_URL = "https://example.com/tab-manager-uninstalled" 
 
 chrome.runtime.setUninstallURL(UNINSTALL_URL, () => {
   if (chrome.runtime.lastError) {
