@@ -53,11 +53,11 @@ const performBackup = async () => {
 }
 
 // 监听定时器触发事件
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === BACKUP_ALARM_NAME) {
-    await performBackup()
-  }
-})
+// chrome.alarms.onAlarm.addListener(async (alarm) => {
+//   if (alarm.name === BACKUP_ALARM_NAME) {
+//     await performBackup()
+//   }
+// })
 
 // --- 卸载时设置跳转 URL ---
 // 重要：这个 URL 应该指向一个你控制的网页，用于告知用户数据可能丢失，
@@ -82,12 +82,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 
   // --- 创建或更新定时备份任务 ---
   // 先清除旧的定时器（以防 period 改变）
-  await chrome.alarms.clear(BACKUP_ALARM_NAME)
+  // await chrome.alarms.clear(BACKUP_ALARM_NAME)
   // 创建新的定时器，例如每 24 小时执行一次
-  chrome.alarms.create(BACKUP_ALARM_NAME, {
-    // delayInMinutes: 1, // 首次执行延迟 1 分钟 (可选)
-    periodInMinutes: 60 * 24 // 1440 分钟 = 24 小时
-  })
+  // chrome.alarms.create(BACKUP_ALARM_NAME, {
+  //   // delayInMinutes: 1, // 首次执行延迟 1 分钟 (可选)
+  //   periodInMinutes: 60 * 24 // 1440 分钟 = 24 小时
+  // })
   console.log(
     `Backup alarm '${BACKUP_ALARM_NAME}' created/updated. Period: 24 hours.`
   )
