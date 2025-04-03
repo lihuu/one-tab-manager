@@ -5,7 +5,7 @@ import SaveAltIcon from "@mui/icons-material/SaveAlt" // 保存图标
 
 import SettingsIcon from "@mui/icons-material/Settings" // 设置/管理图标
 import TabIcon from "@mui/icons-material/Tab" // 单个 Tab 图标
-import { Box, Button, CircularProgress, Link, Typography } from "@mui/material"
+import { Box, Button, CircularProgress, Typography } from "@mui/material"
 import React, { useState } from "react"
 
 import { saveTabs } from "./storage" // 导入存储逻辑
@@ -24,35 +24,22 @@ function IndexPopup() {
   const handleSaveTabs = async (type: "all" | "current" | "inactive") => {
     setLoading(type) // 设置加载状态
     try {
-      let tabsToQuery: chrome.tabs.QueryInfo = {} // Chrome Tab 查询条件
-
       // 根据类型设置查询条件
-      switch (type) {
-        case "current":
-          // 查询当前窗口的活动标签页
-          tabsToQuery = { active: true, currentWindow: true }
-          break
-        case "inactive":
-          // 查询所有普通窗口中的非活动标签页
-          // 注意: Chrome 没有直接的 'inactive' 状态，这里使用 active: false
-          tabsToQuery = { active: false, windowType: "normal" }
-          break
-        case "all":
-        default:
-          // 查询所有普通窗口的所有标签页
-          tabsToQuery = { windowType: "normal" }
-          break
-      }
+      const tabsToQuery = buildTabsQuery(type)
 
       // 执行查询
-      const tabs = await chrome.tabs.query(tabsToQuery)
+      let tabs = await chrome.tabs.query(tabsToQuery)
 
-      // 过滤掉无效或不需要保存的标签页 (例如新标签页、插件自身页面)
+      //
+      if (type === "inactive") {
+        tabs = tabs.filter((tab) => tab.discarded)
+      }
+
+      // 过滤掉无效或不需要保存的标签页 (例如新标签页)
       const filteredTabs = tabs.filter(
         (tab) =>
           tab.url && // 必须有 URL
-          !tab.url.startsWith("chrome://newtab") && // 排除新标签页
-          !tab.url.startsWith("chrome-extension://") // 排除插件页面
+          !tab.url.startsWith("chrome://newtab")
       )
 
       // 如果有需要保存的标签页
@@ -65,7 +52,18 @@ function IndexPopup() {
         }))
         // 调用保存函数
         await saveTabs(tabsData)
-        // TODO: 添加用户反馈 (例如：短暂显示成功消息)
+
+        const tabsToCloseIds = filteredTabs.map((tab) => tab.id!)
+
+        console.log(`Successfully saved ${tabsData.length} tabs.`) // 添加成功日志
+
+        // --- 新增：关闭已保存的标签页 ---
+        if (tabsToCloseIds.length > 0) {
+          await chrome.tabs.remove(tabsToCloseIds)
+          console.log(`Closed ${tabsToCloseIds.length} tabs.`) // 添加关闭日志
+        }
+
+        // ------------------------------
       } else {
         console.log("No tabs to save for type:", type)
         // TODO: 添加用户反馈 (例如：短暂显示无内容消息)
@@ -139,6 +137,7 @@ function IndexPopup() {
         >
           {loading === "inactive" ? "保存中..." : "收取非活动标签页"}
         </Button>
+
         {/* 打开管理页面 */}
         <Button
           variant="text" // 文本按钮样式
@@ -151,6 +150,23 @@ function IndexPopup() {
       </Box>
     </Box>
   )
+
+  function buildTabsQuery(type: string): chrome.tabs.QueryInfo {
+    switch (type) {
+      case "current":
+        // 查询当前窗口的活动标签页
+        return { active: true, currentWindow: true }
+      case "inactive":
+        // 查询所有普通窗口中的非活动标签页
+        // 注意: Chrome 没有直接的 'inactive' 状态，这里使用 active: false
+        // 这里的 inactive 应该是指 chrome 浏览器新增加的功能，常时间不活动的页面会自动释放内存
+        return { active: false, windowType: "normal" }
+      case "all":
+      default:
+        // 查询所有普通窗口的所有标签页
+        return { windowType: "normal" }
+    }
+  }
 }
 
 export default IndexPopup
