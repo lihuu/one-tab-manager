@@ -39,7 +39,8 @@ function IndexPopup() {
       const filteredTabs = tabs.filter(
         (tab) =>
           tab.url && // 必须有 URL
-          !tab.url.startsWith("chrome://newtab")
+          !tab.url.startsWith("chrome://") && // 过滤掉 Chrome 内置页面
+          !tab.url.startsWith("chrome-extension://") // 过滤掉扩展页面
       )
 
       // 如果有需要保存的标签页
@@ -61,6 +62,10 @@ function IndexPopup() {
         if (tabsToCloseIds.length > 0) {
           await chrome.tabs.remove(tabsToCloseIds)
           console.log(`Closed ${tabsToCloseIds.length} tabs.`) // 添加关闭日志
+          if (type === "all") {
+            // 如果是收取所有标签页，则打开选项页面
+            this.openOptionsPage()
+          }
         }
 
         // ------------------------------
